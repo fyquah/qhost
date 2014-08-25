@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+
+require "mercenary"
+
+Mercenary.program(:qhost) do |p|
+  p.description 'qhost is a command line utility that enable you to directly get your static web app on localhost'
+  p.syntax "qhost <directory (defaults to current directory) > [options]"
+  p.version "0.0.1"
+  p.option "port_number" , "-p NUM" , "--port NUM" , "the port number, defaults to 9321"
+  p.option "daemonize" , "-d" , "--daemonize" , "daemonize the process to run in the background"
+
+  p.action do |args , options|
+    options = options.inject({}){ |memo , (key , value)| memo[key.to_sym] = value ; memo}
+    port_number  = (options[:port_number] || 9321).to_i
+  	directory = args[0] || "." ;
+  	is_a_daemon_process = !options[:daemonize].nil?
+
+    require "sinatra"
+
+  	set :port, port_number
+  	set :root , `pwd`.chomp
+  	set :public_folder , Proc.new { File.join(root , directory) }
+
+  	if is_a_daemon_process
+  	  puts "Daemonizing process"
+  	  puts "port number is #{port_number}"
+  	  puts "To kill the process, hit kill #{Process.pid}"
+  	  Process.daemon
+  	end
+
+  	get "/" do
+  	  redirect "index.html"
+  	end
+
+  end
+end
